@@ -4,7 +4,7 @@ const fontToggleBtn = document.getElementById('font-toggle-btn');
 const lineHeightSlider = document.getElementById('line-height-slider');
 const letterSpacingSlider = document.getElementById('letter-spacing-slider');
 
-// --- 1. "Clean View" Button (This code was already correct) ---
+// --- 1. "Clean View" Button (NEW v1.3) ---
 cleanViewBtn.addEventListener('click', () => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const currentTab = tabs[0];
@@ -14,44 +14,78 @@ cleanViewBtn.addEventListener('click', () => {
       target: { tabId: currentTab.id },
       files: ['Readability.js']
     }, () => {
-      // Step 2: After, run our parsing function
+      // Step 2: After, run our NEW "scroll and parse" function
       chrome.scripting.executeScript({
         target: { tabId: currentTab.id },
-        function: parseArticleWithReadability,
+        function: scrollAndParse,
         args: [currentTab.url]
       });
     });
   });
 });
 
-function parseArticleWithReadability(pageUrl) {
-  const documentClone = document.cloneNode(true);
-  const article = new Readability(documentClone, {
-    charThreshold: 500,
-    pageUrl: pageUrl
-  }).parse();
+// THIS IS OUR NEW, SMARTER FUNCTION
+function scrollAndParse(pageUrl) {
+  // 1. Scroll to the very bottom to trigger lazy-loading
+  window.scrollTo(0, document.body.scrollHeight);
 
-  if (article && article.content) {
-    const readerView = document.createElement('div');
-    readerView.style.cssText = `
-      position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: #f4f4f4; color: #333;
-      padding: 5% 15%; box-sizing: border-box;
-      overflow-y: scroll; z-index: 99999;
-      font-size: 20px; line-height: 1.6;
-    `;
-    readerView.innerHTML = `<h1>${article.title}</h1>${article.content}`;
-    document.body.innerHTML = ""; // Clear the body
-    document.body.appendChild(readerView);
-  } else {
-    alert("Sorry, EchoRead couldn't find an article on this page.");
-  }
+  // 2. Wait 1 second for the new content to load
+  setTimeout(() => {
+    // 3. Now, clone the document and run Readability
+    const documentClone = document.cloneNode(true);
+    const article = new Readability(documentClone, {
+      charThreshold: 500, // Find content with at least 500 characters
+      pageUrl: pageUrl  // Pass the URL to help find links/images
+    }).parse();
+
+    if (article && article.content) {
+      // 4. (FIX FOR IMAGES) Create a new, full HTML document in a string
+      const newHtml = `
+        <html>
+        <head>
+          <title>${article.title}</title>
+          <base href="${pageUrl}">
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              background: #f5f5f5;
+              color: #1a1a1a;
+              padding: 2% 10%;
+              margin: 0;
+              font-size: 20px;
+              line-height: 1.6;
+              max-width: 800px;
+              margin: 0 auto;
+            }
+            h1, h2, h3 { line-height: 1.2; }
+            /* This makes sure images and videos don't overflow */
+            img, video, figure { max-width: 100%; height: auto; }
+            a { color: #007bff; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+          </style>
+        </head>
+        <body>
+          <h1>${article.title}</h1>
+          ${article.content}
+        </body>
+        </html>
+      `;
+      
+      // 5. Replace the entire page with our new clean HTML
+      // This is more powerful than just changing the body
+      document.open();
+      document.write(newHtml);
+      document.close();
+
+    } else {
+      alert("Sorry, EchoRead couldn't find an article on this page.");
+    }
+  }, 1000); // 1-second (1000ms) delay
 }
 
-// --- 2. Font Toggle Button (FIXED) ---
+
+// --- 2. Font Toggle Button (Code is fine from v1.2) ---
 fontToggleBtn.addEventListener('click', () => {
-  // We MUST use the proper async callback, just like in "Clean View"
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
@@ -85,10 +119,9 @@ function toggleDyslexicFont() {
   }
 }
 
-// --- 3. Spacing Sliders (FIXED) ---
+// --- 3. Spacing Sliders (Code is fine from v1.2) ---
 lineHeightSlider.addEventListener('input', (e) => {
   const newHeight = e.target.value;
-  // We MUST use the proper async callback here too
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
@@ -109,7 +142,6 @@ lineHeightSlider.addEventListener('input', (e) => {
 
 letterSpacingSlider.addEventListener('input', (e) => {
   const newSpacing = e.target.value;
-  // And the proper async callback here
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
