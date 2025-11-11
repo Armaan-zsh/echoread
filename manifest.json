@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "EchoRead v4.0 (OCR Beast Mode)",
-  "version": "4.0",
+  "name": "EchoRead v5.0 (Dedicated PDF Viewer)",
+  "version": "5.0",
   "description": "Reads HTML articles and ALL PDFs (including scans) with OCR.",
   "permissions": [
     "activeTab",
@@ -20,7 +20,8 @@
         "pdf.mjs",
         "pdf.worker.mjs",
         "tesseract.min.js",
-        "eng.traineddata"
+        "eng.traineddata",
+        "pdf-viewer.html"  // NEW: Our dedicated PDF viewer page
       ],
       "matches": ["<all_urls>"]
     }
