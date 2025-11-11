@@ -25,20 +25,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// --- PDF CONVERSION LOGIC (NEW v2.1) ---
+// --- PDF CONVERSION LOGIC (NEW v2.2 "JIT Edition") ---
 convertPdfBtn.addEventListener('click', () => {
-  convertPdfBtn.textContent = 'Converting...';
+  convertPdfBtn.textContent = 'Loading PDF...';
   convertPdfBtn.disabled = true;
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const currentTab = tabs[0];
+    // Step 1: Inject pdf.js
     chrome.scripting.executeScript({
       target: { tabId: currentTab.id },
       files: ['pdf.js']
     }, () => {
+      // Step 2: Inject our new 'Just-In-Time' parser
       chrome.scripting.executeScript({
         target: { tabId: currentTab.id },
-        function: parsePdf, // This is our new, smarter function
+        function: initializePdfViewer, // This is our new main function
         args: [
           chrome.runtime.getURL('pdf.worker.mjs'),
           chrome.runtime.getURL('viewer.css')
@@ -48,90 +50,175 @@ convertPdfBtn.addEventListener('click', () => {
   });
 });
 
-// This function now builds the page in real-time
-async function parsePdf(workerUrl, cssUrl) {
-  // 1. Setup PDF.js
+// This function loads the PDF and builds the "viewer" shell
+async function initializePdfViewer(workerUrl, cssUrl) {
+  // 1. Setup PDF.js and load the document
   pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
   const loadingTask = pdfjsLib.getDocument(window.location.href);
   const pdf = await loadingTask.promise;
 
-  // 2. Create the NEW HTML shell with a progress bar
-  document.open();
-  document.write(`
+  // 2. Create the HTML for our new "Viewer"
+  const newHtml = `
     <html>
     <head>
       <title>EchoRead - ${pdf.numPages} Page PDF</title>
       <link rel="stylesheet" href="${cssUrl}">
       <style>
-        body { background: #f5f5f5; padding: 20px; font-family: sans-serif; }
-        .page { background: white; margin: 20px auto; max-width: 800px; box-shadow: 0 0 10px rgba(0,0,0,0.1); padding: 40px; }
+        body { background: #f5f5f5; padding-top: 80px; font-family: sans-serif; }
+        #page-container {
+          background: white;
+          margin: 20px auto;
+          max-width: 800px;
+          min-height: 80vh; /* Make sure it's tall */
+          box-shadow: 0 0 10px rgba(0,0,0,0.1);
+          padding: 40px;
+        }
         .textLayer { line-height: 1.6; font-size: 18px; }
         
-        /* Progress Bar Styles */
-        #progress-container {
+        /* Navigation Bar */
+        #nav-bar {
           position: fixed; top: 0; left: 0;
-          width: 100%; height: 20px;
-          background: #ccc; z-index: 9999;
+          width: 100%;
+          background: #333;
+          color: white;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 10px;
+          z-index: 9999;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-        #progress-bar {
-          width: 0%; height: 100%;
-          background: #007bff;
-          color: white; text-align: center;
-          font-weight: bold;
-          line-height: 20px;
-          transition: width 0.2s ease;
+        #nav-bar button {
+          font-size: 16px;
+          padding: 8px 16px;
+          margin: 0 10px;
+          cursor: pointer;
         }
+        #nav-bar button:disabled { background: #777; cursor: not-allowed; }
+        #page-num { font-size: 18px; font-weight: bold; }
       </style>
     </head>
     <body>
-      <div id="progress-container">
-        <div id="progress-bar">0%</div>
+      <div id="nav-bar">
+        <button id="prev-btn">Previous</button>
+        <span id="page-num">Loading...</span>
+        <button id="next-btn">Next</button>
       </div>
-      <h1 style="text-align: center;">Converting PDF...</h1>
-      <h2 style="text-align: center;">(Total ${pdf.numPages} pages)</h2>
-      <div id="pdf-content"></div>
+      
+      <div id="page-container">
+        <div id="text-content-layer" class="textLayer">
+          <h1>Loading Page 1...</h1>
+        </div>
+      </div>
+      
+      <script>
+        // Global variables for this new page
+        let pdfDoc = null;
+        let currentPageNum = 1;
+        let totalPages = ${pdf.numPages};
+        
+        // Get our new UI elements
+        const pageNumDisplay = document.getElementById('page-num');
+        const textContentLayer = document.getElementById('text-content-layer');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        
+        // This is our core "Just-In-Time" function
+        async function renderPage(num) {
+          try {
+            // Get the page
+            const page = await pdfDoc.getPage(num);
+            const textContent = await page.getTextContent();
+            
+            // Build the HTML for the page
+            let pageText = "";
+            for (const item of textContent.items) {
+              pageText += item.str + " ";
+              if (item.hasEOL) { pageText += "<br>"; }
+            }
+            
+            // Render it to the screen
+            textContentLayer.innerHTML = pageText;
+            
+            // Update UI
+            currentPageNum = num;
+            pageNumDisplay.textContent = \`Page \${currentPageNum} / \${totalPages}\`;
+            
+            // Enable/disable buttons
+            prevBtn.disabled = (currentPageNum <= 1);
+            nextBtn.disabled = (currentPageNum >= totalPages);
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+            
+          } catch (err) {
+            console.error('Error rendering page:', err);
+            textContentLayer.innerHTML = \`<h2>Error loading page \${num}</h2><p>\${err.message}</p>\`;
+          }
+        }
+        
+        // Add button event listeners
+        prevBtn.addEventListener('click', () => {
+          if (currentPageNum > 1) {
+            renderPage(currentPageNum - 1);
+          }
+        });
+        
+        nextBtn.addEventListener('click', () => {
+          if (currentPageNum < totalPages) {
+            renderPage(currentPageNum + 1);
+          }
+        });
+        
+        // KICK IT OFF: Store the loaded PDF and render Page 1
+        pdfDoc = pdfjsLib.getDocument(window.location.href).promise;
+        
+        // This is a bit tricky: 'pdf' in the outer scope
+        // is not the same as 'pdfDoc' here. We need to
+        // get the document *again* inside this new page.
+        // Let's optimize this.
+        
+        // --- OPTIMIZATION ---
+        // Storing the 'pdf' object is hard. Let's just
+        // store the URL and re-load the library.
+        
+        (async function() {
+          try {
+            // Load the PDF library *inside* the new page
+            const script = document.createElement('script');
+            script.src = "${chrome.runtime.getURL('pdf.js')}";
+            document.head.appendChild(script);
+            
+            script.onload = async () => {
+              // Now that pdf.js is loaded, set up the worker
+              pdfjsLib.GlobalWorkerOptions.workerSrc = "${chrome.runtime.getURL('pdf.worker.mjs')}";
+              
+              // Load the document
+              const loadingTask = pdfjsLib.getDocument(window.location.href);
+              pdfDoc = await loadingTask.promise; // Assign to our global var
+              
+              // Now, render the first page
+              renderPage(1);
+            }
+          } catch (err) {
+            console.error('Failed to load PDF lib:', err);
+          }
+        })();
+        
+      </script>
     </body>
     </html>
-  `);
+  `;
 
-  // 3. Get the elements we just created
-  const progressBar = document.getElementById('progress-bar');
-  const contentDiv = document.getElementById('pdf-content');
-
-  // 4. Loop through every page, one by one
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    
-    let pageText = "";
-    for (const item of textContent.items) {
-      pageText += item.str + " ";
-      if (item.hasEOL) { pageText += "<br>"; }
-    }
-    
-    // Add this page's content to the screen
-    const pageHtml = `
-      <div class="page" id="page-${i}">
-        <h3>Page ${i}</h3>
-        <div class="textLayer">${pageText}</div>
-      </div>
-    `;
-    contentDiv.innerHTML += pageHtml;
-
-    // 5. UPDATE THE PROGRESS BAR
-    const percent = Math.round((i / pdf.numPages) * 100);
-    progressBar.style.width = percent + '%';
-    progressBar.textContent = percent + '%';
-  }
-
-  // 6. Finish
-  progressBar.textContent = 'Complete!';
-  progressBar.style.background = '#28a745'; // Green
+  // 3. Replace the page with our new viewer
+  document.open();
+  document.write(newHtml);
   document.close();
 }
 
 
 // --- ALL OUR OLD HTML-PAGE FUNCTIONS (No changes) ---
+// (These are 100% the same as before, for HTML pages)
 
 // --- 1. "Clean View" Button ---
 cleanViewBtn.addEventListener('click', () => {
@@ -152,7 +239,6 @@ function parseArticleWithReadability(pageUrl) {
   setTimeout(() => {
     const documentClone = document.cloneNode(true);
     const article = new Readability(documentClone, { charThreshold: 500, pageUrl: pageUrl }).parse();
-
     if (article && article.content) {
       const newHtml = `
         <html>
