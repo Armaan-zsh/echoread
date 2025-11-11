@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EchoRead</title>
+  <style>
+    body { width: 250px; font-family: sans-serif; }
+    h3 { text-align: center; }
+    button {
+      width: 90%;
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px 5%;
+      cursor: pointer;
+    }
+    .control-group {
+      margin: 15px 5%;
+    }
+    .control-group label {
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h3>EchoRead v1.0</h3>
+  
+  <button id="clean-view-btn">Focus Mode (Clean View)</button>
+  <button id="font-toggle-btn">Toggle Dyslexic Font</button>
+
+  <div class="control-group">
+    <label for="line-height-slider">Line Height</label>
+    <input type="range" id="line-height-slider" min="1" max="3" step="0.1" value="1.5">
+  </div>
+
+  <div class="control-group">
+    <label for="letter-spacing-slider">Letter Spacing</label>
+    <input type="range" id="letter-spacing-slider" min="0" max="10" step="0.5" value="0">
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
