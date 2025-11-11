@@ -1,7 +1,13 @@
-// --- JIT + HYBRID OCR SCRIPT (Embedded in new page) ---
+// --- JIT + HYBRID OCR SCRIPT (v5.3 - No Modules) ---
+
+// --- STEP 1: LIBRARIES ARE ALREADY LOADED BY THE HTML ---
+// No import statements needed.
+// 'pdfjsLib' and 'Tesseract' will exist on the 'window' object.
+
+// --- STEP 2: GET UI ELEMENTS ---
 let pdfDoc = null;
 let currentPageNum = 1;
-let totalPages = 0; // Will be set after PDF loads
+let totalPages = 0;
 let tesseractWorker = null;
 let ocrInitialized = false;
 let pendingOcrPage = null;
@@ -14,17 +20,10 @@ const nextBtn = document.getElementById('next-btn');
 const canvas = document.getElementById('pdf-canvas');
 const ctx = canvas.getContext('2d');
 
-// --- Get the PDF URL from the query string ---
 const urlParams = new URLSearchParams(window.location.search);
 const pdfUrl = urlParams.get('url');
 
-if (!pdfUrl) {
-  ocrStatus.innerHTML = `<h2>Error</h2><p>No PDF URL provided. Please go back.</p>`;
-  document.getElementById('nav-bar').style.display = 'none';
-} else {
-  initializePdfViewer(); // Start the viewer
-}
-
+// --- STEP 3: DEFINE FUNCTIONS ---
 
 async function performOcr(pageNum) {
   try {
@@ -33,31 +32,30 @@ async function performOcr(pageNum) {
     
     textContentLayer.innerHTML = text.replace(/\n/g, '<br>');
     
-    canvas.style.display = 'none'; // Hide image preview
-    textContentLayer.style.display = 'block'; // Show text
+    canvas.style.display = 'none'; 
+    textContentLayer.style.display = 'block';
     ocrStatus.textContent = `Page ${pageNum} loaded (from Scan).`;
     pendingOcrPage = null;
-  } catch (err) {
+  } catch (err)
+ {
     console.error('OCR failed:', err);
     ocrStatus.textContent = `OCR error on page ${pageNum}: ${err.message}. Showing image.`;
   }
 }
 
-async function initializePdfViewer() { // Renamed from initializePdf
+async function initializePdfViewer() {
   try {
     ocrStatus.textContent = "Loading PDF document...";
     
-    // Pass worker URL and lang data URL from runtime
+    // 'pdfjsLib' is now defined by 'pdf.mjs' script in HTML
     pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.mjs');
-    const loadingTask = pdfjsLib.getDocument(pdfUrl); // Use the URL from query string
+    const loadingTask = pdfjsLib.getDocument(pdfUrl);
     pdfDoc = await loadingTask.promise;
-    totalPages = pdfDoc.numPages; // Set total pages here
+    totalPages = pdfDoc.numPages;
 
-    // Pre-load the OCR engine in the background
-    initializeOcr();
+    initializeOcr(); // Start OCR load in background
     
-    // Render the first page (no waiting for OCR)
-    await renderPage(1);
+    await renderPage(1); // Render first page
     
   } catch (err) {
     console.error(err);
@@ -68,12 +66,14 @@ async function initializePdfViewer() { // Renamed from initializePdf
 async function initializeOcr() {
   try {
     ocrStatus.textContent = "Loading OCR engine in background...";
+    
+    // 'Tesseract' is now defined by 'tesseract.min.js' script in HTML
     tesseractWorker = await Tesseract.createWorker({
       workerPath: chrome.runtime.getURL('tesseract.min.js'),
       langPath: '',
       corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/tesseract-core.wasm.js',
     });
-    await tesseractWorker.loadLanguage(chrome.runtime.getURL('eng.traineddata')); // Get URL from runtime
+    await tesseractWorker.loadLanguage(chrome.runtime.getURL('eng.traineddata'));
     await tesseractWorker.initialize('eng');
     ocrInitialized = true;
     ocrStatus.textContent = "OCR engine ready.";
@@ -117,7 +117,6 @@ async function renderPage(num) {
       await page.render({ canvasContext: ctx, viewport: viewport }).promise;
       
       canvas.style.display = 'block';
-
       ocrStatus.textContent = `Image loaded. OCR in progress...`;
       
       if (ocrInitialized) {
@@ -145,5 +144,14 @@ async function renderPage(num) {
   }
 }
 
+// --- STEP 4: ADD EVENT LISTENERS & START ---
 prevBtn.addEventListener('click', () => { if (currentPageNum > 1) renderPage(currentPageNum - 1); });
 nextBtn.addEventListener('click', () => { if (currentPageNum < totalPages) renderPage(currentPageNum + 1); });
+
+// Start the app if we have a URL
+if (pdfUrl) {
+  initializePdfViewer();
+} else {
+  ocrStatus.innerHTML = `<h2>Error</h2><p>No PDF URL provided. Please go back.</p>`;
+  document.getElementById('nav-bar').style.display = 'none';
+}
