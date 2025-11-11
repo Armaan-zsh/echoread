@@ -1,19 +1,24 @@
 {
   "manifest_version": 3,
-  "name": "EchoRead v1.1 (Fixed)",
-  "version": "1.1",
-  "description": "The core EchoRead experience, now with better fixes.",
+  "name": "EchoRead v2.0 (PDF Support)",
+  "version": "2.0",
+  "description": "Reads articles and now PDFs.",
   "permissions": [
     "activeTab",
     "scripting",
-    "tabs" 
+    "tabs"
   ],
   "action": {
     "default_popup": "popup.html"
   },
   "web_accessible_resources": [
     {
-      "resources": ["OpenDyslexic-Regular.otf"],
+      "resources": [
+        "OpenDyslexic-Regular.otf",
+        "pdf.js",
+        "pdf.worker.mjs",
+        "viewer.css"
+      ],
       "matches": ["<all_urls>"]
     }
   ]

@@ -15,26 +15,34 @@
     }
     .control-group {
       margin: 15px 5%;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
     }
-    .control-group label {
-      font-size: 14px;
-    }
+    .control-group label { font-size: 14px; }
+    /* This will hide/disable elements */
+    .hidden { display: none; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
   </style>
 </head>
 <body>
-  <h3>EchoRead v1.0</h3>
-  
-  <button id="clean-view-btn">Focus Mode (Clean View)</button>
-  <button id="font-toggle-btn">Toggle Dyslexic Font</button>
+  <h3>EchoRead v2.0</h3>
 
-  <div class="control-group">
-    <label for="line-height-slider">Line Height</label>
-    <input type="range" id="line-height-slider" min="1" max="3" step="0.1" value="1.5">
+  <div id="pdf-controls" class="control-group hidden">
+    <button id="convert-pdf-btn">📚 Convert this PDF</button>
+    <p style="font-size: 12px; text-align: center;">This page is a PDF. Convert it to an HTML article to use EchoRead.</p>
   </div>
 
-  <div class="control-group">
-    <label for="letter-spacing-slider">Letter Spacing</label>
-    <input type="range" id="letter-spacing-slider" min="0" max="10" step="0.5" value="0">
+  <div id="html-controls" class="control-group hidden">
+    <button id="clean-view-btn">Focus Mode (Clean View)</button>
+    <button id="font-toggle-btn">Toggle Dyslexic Font</button>
+    <div class="control-group">
+      <label for="line-height-slider">Line Height</label>
+      <input type="range" id="line-height-slider" min="1" max="3" step="0.1" value="1.5">
+    </div>
+    <div class="control-group">
+      <label for="letter-spacing-slider">Letter Spacing</label>
+      <input type="range" id="letter-spacing-slider" min="0" max="10" step="0.5" value="0">
+    </div>
   </div>
 
   <script src="popup.js"></script>
