@@ -1,24 +1,27 @@
 {
   "manifest_version": 3,
-  "name": "EchoRead v2.0 (PDF Support)",
-  "version": "2.0",
-  "description": "Reads articles and now PDFs.",
+  "name": "EchoRead v3.0 (AI Edition)",
+  "version": "3.0",
+  "description": "Reads articles with AI-powered simplification.",
   "permissions": [
     "activeTab",
     "scripting",
-    "tabs"
+    "tabs",
+    "storage",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/"
   ],
   "action": {
     "default_popup": "popup.html"
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "web_accessible_resources": [
     {
-      "resources": [
-        "OpenDyslexic-Regular.otf",
-        "pdf.js",
-        "pdf.worker.mjs",
-        "viewer.css"
-      ],
+      "resources": ["OpenDyslexic-Regular.otf"],
       "matches": ["<all_urls>"]
     }
   ]
