@@ -4,7 +4,7 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/
 // We'll set the key when the extension is first installed.
 chrome.runtime.onInstalled.addListener(() => {
   // --- PASTE YOUR API KEY HERE ---
-  const API_KEY = "AIzaSyCVrBBvJI8Q5jxbI1Rq48CYJADLlAhlqMM";
+  const API_KEY = "AIzaSyAVRHLxGU2n-RIQy5dmbzFBSua_yFNGB2g";
   // ---
   
   chrome.storage.local.set({ apiKey: API_KEY }, () => {
