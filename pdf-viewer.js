@@ -103,7 +103,7 @@ async function renderPage(num) {
     } else {
       textContentLayer.innerHTML = pageText;
       textContentLayer.style.display = 'block';
-      ocrStatus.textContent = `Page ${num} loaded (Digital).`;
+      ocrStatus.textContent = `Page ${pageNum} loaded (Digital).`;
     }
     
     currentPageNum = num;
@@ -158,6 +158,13 @@ async function initializePdfViewer() {
     
     // 'pdfjsLib' is NOW GUARANTEED to be defined
     // workerSrc was set by loader.js
+    
+    // --- THIS IS THE FIX ---
+    // We were setting the workerSrc in loader.js, but let's
+    // be 100% sure and set it here, pointing to the correct file.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
+    // --- END FIX ---
+    
     const loadingTask = pdfjsLib.getDocument(pdfUrl);
     pdfDoc = await loadingTask.promise;
     totalPages = pdfDoc.numPages;
