@@ -27,10 +27,9 @@ const nextBtn = document.getElementById('next-btn');
 const canvas = document.getElementById('pdf-canvas');
 const ctx = canvas.getContext('2d');
 
-const urlParams = new URLSearchParams(window.location.search);
-const pdfUrl = urlParams.get('url');
-
-// --- STEP 3: DEFINE FUNCTIONS ---
+/const urlParams = new URLSearchParams(window.location.search);
+let pdfUrl = urlParams.get('url');
+if (pdfUrl) { pdfUrl = decodeURIComponent(pdfUrl); } // <-- THIS IS THE FIX/ --- STEP 3: DEFINE FUNCTIONS ---
 
 async function performOcr(pageNum) {
   try {
