@@ -85,7 +85,7 @@ async function initializeOcr() {
     tesseractWorker = await Tesseract.createWorker({
       workerPath: chrome.runtime.getURL('tesseract.min.js'),
       langPath: '',
-      corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/tesseract-core.wasm.js',
+      corePath: 'httpsS://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/tesseract-core.wasm.js',
     });
     await tesseractWorker.loadLanguage(chrome.runtime.getURL('eng.traineddata'));
     await tesseractWorker.initialize('eng');
