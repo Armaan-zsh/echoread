@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "EchoRead v5.5 (Bootstrap Fix)",
-  "version": "5.5",
+  "name": "EchoRead v5.6 (The Final Fix)",
+  "version": "5.6",
   "description": "Reads HTML articles and ALL PDFs (including scans) with OCR.",
   "permissions": [
     "activeTab",
@@ -17,13 +17,14 @@
       "resources": [
         "OpenDyslexic-Regular.otf",
         "readability.js",
-        "pdf.mjs",
-        "pdf.worker.mjs",
         "tesseract.min.js",
         "eng.traineddata",
         "pdf-viewer.html",
         "pdf-viewer.js",
-        "loader.js" 
+        "loader.js",
+        
+        "pdf.js",
+        "pdf.worker.js"
       ],
       "matches": ["<all_urls>"]
     }
