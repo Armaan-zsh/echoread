@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "EchoRead v5.6 (The Final Fix)",
-  "version": "5.6",
+  "name": "EchoRead v6.0 (The Real Fix)",
+  "version": "6.0",
   "description": "Reads HTML articles and ALL PDFs (including scans) with OCR.",
   "permissions": [
     "activeTab",
@@ -21,12 +21,12 @@
         "eng.traineddata",
         "pdf-viewer.html",
         "pdf-viewer.js",
-        "loader.js",
         
-        "pdf.js",
-        "pdf.worker.js"
+        "pdf.mjs",
+        "pdf.worker.mjs"
       ],
-      "matches": ["<all_urls>"]
+      "matches": ["<all_urls>"],
+      "use_dynamic_url": true
     }
   ]
 }
